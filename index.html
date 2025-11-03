@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Christian — solnetmesh</title>
+  <meta name="description" content="Christian — projects, experiments and notes." />
+
+  <style>
+    /* ~40 lines of compact, intentional CSS */
+    :root{--bg:#0f1720;--card:#0b1320;--muted:#9aa4b2;--accent:#66e0ff}
+    *{box-sizing:border-box}html,body{height:100%}
+    body{margin:0;font-family:Inter,ui-sans-serif,system-ui,Segoe UI,Roboto;line-height:1.2;background:linear-gradient(180deg,#08101a 0%,var(--bg) 100%);color:#e6eef6;padding:48px}
+    .wrap{max-width:980px;margin:0 auto}
+
+    header{display:flex;align-items:center;gap:18px;margin-bottom:26px}
+    .logo{display:inline-grid;place-items:center;width:56px;height:56px;border-radius:12px;background:linear-gradient(135deg,#06202b,#0b2430);font-weight:700;color:var(--accent);font-size:18px}
+    h1{margin:0;font-size:28px}
+    .sub{color:var(--muted);font-size:13px}
+
+    .hero{display:grid;grid-template-columns:1fr 260px;gap:28px;margin-bottom:28px;align-items:start}
+    .card{background:linear-gradient(180deg,rgba(255,255,255,0.02),transparent);border:1px solid rgba(255,255,255,0.03);padding:22px;border-radius:12px}
+
+    .about p{margin:0 0 12px 0;color:var(--muted)}
+
+    .projects{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px;margin-top:14px}
+    .proj{padding:14px;border-radius:10px;background:linear-gradient(180deg,rgba(255,255,255,0.01),transparent);border:1px solid rgba(255,255,255,0.03)}
+    .proj h3{margin:0 0 6px 0;font-size:16px}
+    .proj p{margin:0;color:var(--muted);font-size:13px}
+
+    footer{margin-top:28px;color:var(--muted);font-size:13px;display:flex;justify-content:space-between;align-items:center}
+
+    a{color:var(--accent);text-decoration:none}
+    .small{font-size:12px}
+
+    /* responsive */
+    @media (max-width:820px){.hero{grid-template-columns:1fr;border-radius:0}.wrap{padding:0 20px}}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div class="logo">CM</div>
+      <div>
+        <h1>Christian — solnetmesh</h1>
+        <div class="sub">builder • tinkerer • open-source • sometimes reckless</div>
+      </div>
+      <div style="margin-left:auto;text-align:right">
+        <div class="small">based in Romania</div>
+      </div>
+    </header>
+
+    <section class="hero">
+      <main>
+        <div class="card about">
+          <h2 style="margin-top:0">Hi — I build things on the internet</h2>
+          <p>I'm Christian. I design tools, hacks, and experiments — usually around web dev, embedded systems and privacy-first tooling. Below are recent projects and notes. Everything here is small, honest, and runnable.</p>
+
+          <h3 style="margin-top:16px">Featured</h3>
+          <div class="projects">
+            <article class="proj">
+              <h3>Ghost UI — local-first</h3>
+              <p>Dev UI served on <code>localhost:5173</code> and exposed via Cloudflare Tunnel for demos.</p>
+            </article>
+            <article class="proj">
+              <h3>Mesh tools</h3>
+              <p>Self-hosted remote access experiments — Guacamole + Cloudflared + fine-grained Access rules.</p>
+            </article>
+            <article class="proj">
+              <h3>Odometry utils</h3>
+              <p>Robotics math helpers, coordinate transforms and tests (FTC friendly).</p>
+            </article>
+          </div>
+        </div>
+      </main>
+
+      <aside>
+        <div class="card">
+          <h4 style="margin:0 0 10px 0">Contact</h4>
+          <div class="small">Email — <a href="mailto:hello@solnetmesh.top">hello@solnetmesh.top</a></div>
+          <div style="height:10px"></div>
+          <div class="small">GitHub — <a href="https://github.com/">github.com/your-username</a></div>
+          <div style="height:10px"></div>
+          <div class="small">Resume — <a href="/resume.pdf">download</a></div>
+        </div>
+
+        <div style="height:14px"></div>
+        <div class="card small">
+          <strong>Quick links</strong>
+          <ul style="padding-left:18px;margin:8px 0 0 0">
+            <li><a href="/projects">All projects</a></li>
+            <li><a href="/notes">Notes</a></li>
+            <li><a href="https://ghost.solnetmesh.top">Ghost UI</a></li>
+          </ul>
+        </div>
+      </aside>
+    </section>
+
+    <footer>
+      <div>© Christian — solnetmesh.top</div>
+      <div class="small">designed with minimal CSS • inspired by camillemormal.com</div>
+    </footer>
+  </div>
+
+  <script>
+    // tiny helper: replace placeholders with your real links if desired
+    (function(){
+      // no-op for now; this is where you could load project JSON or swap theme
+    })()
+  </script>
+</body>
+</html>

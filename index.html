@@ -1,134 +1,1299 @@
 <!doctype html>
 <html lang="en">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
 <title>Chris — Independent Inventor</title>
 <style>
-:root{
-  --bg:#141414;
-  --fg:#eaeaea;
-  --muted:#9a9a9a;
-  --accent:#7afcff;
-}
-*{box-sizing:border-box}
-html,body{
-  margin:0;
-  background:var(--bg);
-  color:var(--fg);
-  font-family:system-ui,-apple-system,sans-serif;
-}
-a{color:var(--accent);text-decoration:none}
-main{max-width:900px;margin:0 auto;padding:80px 24px}
-section{margin-bottom:120px}
-h1,h2,h3{letter-spacing:-0.02em}
-h1{font-size:56px;margin-bottom:16px}
-h2{font-size:36px;margin:48px 0 16px}
-h3{font-size:22px;margin:32px 0 8px}
-p{line-height:1.7;color:var(--fg)}
-small{color:var(--muted)}
-ul{padding-left:20px}
-li{margin-bottom:8px}
-figure{margin:32px 0}
-figcaption{font-size:14px;color:var(--muted);margin-top:6px}
-footer{opacity:0.4;font-size:14px;margin-top:120px}
+  /* =========================
+     RESET + ROOT
+     ========================= */
+  *{box-sizing:border-box;margin:0;padding:0}
+  :root{
+    --bg:#141414;
+    --accent:#7afcff;
+    --ease:cubic-bezier(.2,.8,.2,1);
+    --ease-out:cubic-bezier(.16,1,.3,1);
+  }
+  
+  html,body{height:100%;background:var(--bg);color:#fff;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Oxygen,Ubuntu,sans-serif;-webkit-font-smoothing:antialiased;overflow:hidden}
+  a{color:inherit;text-decoration:none}
+  button{background:none;border:none;color:inherit;font:inherit;cursor:pointer;padding:0}
+  
+  ::selection{background:rgba(122,252,255,0.2)}
+  
+  /* hide scrollbars */
+  .no-scroll{scrollbar-width:none;-ms-overflow-style:none}
+  .no-scroll::-webkit-scrollbar{display:none}
+
+  /* =========================
+     CANVAS STARFIELD
+     ========================= */
+  #stars{position:fixed;inset:0;z-index:0;display:block;pointer-events:none}
+
+  /* =========================
+     LOADER
+     ========================= */
+  #loader{
+    position:fixed;inset:0;z-index:9999;background:var(--bg);
+    display:flex;align-items:center;justify-content:center;
+    transition:opacity 800ms var(--ease);pointer-events:none;
+  }
+  #loader.hide{opacity:0}
+  .load-num{
+    font-size:clamp(16px,2vw,20px);letter-spacing:0.05em;
+    overflow:hidden;height:1.2em;position:relative;
+  }
+  .load-num span{
+    display:block;will-change:transform;
+    transform:translate3d(0,100%,0);
+  }
+
+  /* =========================
+     NAV
+     ========================= */
+  nav{
+    position:fixed;top:0;left:0;right:0;z-index:100;
+    display:flex;justify-content:space-between;align-items:center;
+    padding:clamp(20px,3vw,40px) clamp(30px,5vw,60px);
+    pointer-events:none;
+  }
+  nav a{
+    pointer-events:auto;font-size:clamp(13px,1.2vw,15px);
+    letter-spacing:0.02em;transition:opacity 400ms var(--ease);
+    will-change:transform;display:inline-block;position:relative;
+  }
+  nav a:hover{opacity:0.6}
+  nav a.active::after{
+    content:'';position:absolute;bottom:-4px;left:0;right:0;
+    height:1px;background:var(--accent);
+  }
+  nav .left{font-weight:600}
+  nav .right{display:flex;gap:clamp(20px,3vw,40px)}
+
+  /* =========================
+     SCROLL PROGRESS BAR
+     ========================= */
+  #scrollProgress{
+    position:fixed;right:clamp(20px,3vw,40px);
+    top:50%;transform:translateY(-50%);
+    width:2px;height:clamp(100px,30vh,300px);
+    background:rgba(255,255,255,0.08);
+    z-index:150;opacity:0;transition:opacity 600ms var(--ease);
+    pointer-events:none;
+  }
+  #scrollProgress.show{opacity:1}
+  #scrollProgress .bar{
+    width:100%;background:var(--accent);
+    height:0%;transition:height 200ms ease-out;
+    box-shadow:0 0 10px rgba(122,252,255,0.4);
+  }
+
+  /* =========================
+     MAIN CONTAINER
+     ========================= */
+  #app{position:relative;width:100%;height:100vh;overflow:hidden}
+  
+  /* intro screen */
+  #intro{
+    position:absolute;inset:0;z-index:20;
+    display:flex;align-items:center;justify-content:center;
+    transition:opacity 800ms var(--ease),transform 800ms var(--ease);
+  }
+  #intro.hide{opacity:0;transform:scale(0.96);pointer-events:none}
+  
+  .intro-content{text-align:center;max-width:90%;padding:0 20px}
+  .intro-content h1{
+    font-size:clamp(40px,8vw,120px);font-weight:800;
+    line-height:0.9;letter-spacing:-0.03em;
+    margin-bottom:clamp(16px,2vw,24px);
+    will-change:transform,opacity;
+  }
+  .intro-content p{
+    font-size:clamp(15px,1.8vw,20px);
+    color:rgba(255,255,255,0.7);letter-spacing:0.01em;
+    will-change:opacity;
+  }
+  .intro-content small{
+    display:block;margin-top:clamp(20px,3vw,30px);
+    font-size:clamp(12px,1.2vw,14px);
+    color:rgba(255,255,255,0.4);
+  }
+
+  /* main carousel view */
+  #main{
+    position:absolute;inset:0;z-index:10;
+    display:flex;flex-direction:column;justify-content:center;
+    opacity:0;pointer-events:none;
+    transition:opacity 1200ms var(--ease);
+  }
+  #main.show{opacity:1;pointer-events:auto}
+  #main.fade-out{opacity:0;transition:opacity 1000ms var(--ease)}
+
+  /* =========================
+     CAROUSEL
+     ========================= */
+  .carousel-container{
+    width:100%;height:clamp(360px,55vh,640px);
+    position:relative;overflow:visible;
+    display:flex;align-items:center;justify-content:center;
+  }
+  
+  .carousel-track{
+    display:flex;gap:clamp(30px,4vw,60px);
+    will-change:transform;
+    transition:transform 1400ms var(--ease);
+    padding:0 50vw;
+  }
+
+  .slide{
+    flex:0 0 clamp(320px,45vw,640px);
+    height:clamp(360px,52vh,580px);
+    border-radius:clamp(8px,1vw,12px);
+    position:relative;overflow:hidden;
+    cursor:pointer;
+    transition:transform 1000ms var(--ease),opacity 1000ms var(--ease),filter 1000ms var(--ease);
+    will-change:transform,opacity;
+    background:#0a0a0a;
+  }
+
+  .slide:not(.active){
+    opacity:0.35;
+    filter:brightness(0.6) saturate(0.8);
+    transform:scale(0.88);
+  }
+  
+  .slide.active{
+    opacity:1;
+    filter:brightness(1) saturate(1);
+    transform:scale(1);
+    box-shadow:0 40px 120px rgba(0,0,0,0.8);
+  }
+
+  .slide-bg{
+    position:absolute;inset:0;
+    background-size:cover;background-position:center;
+    transition:transform 1200ms var(--ease-out);
+  }
+  
+  .slide:hover .slide-bg{transform:scale(1.06)}
+
+  .slide-content{
+    position:absolute;bottom:0;left:0;right:0;
+    padding:clamp(20px,3vw,30px);
+    background:linear-gradient(180deg,transparent 0%,rgba(0,0,0,0.8) 100%);
+    z-index:2;
+  }
+  
+  .slide-content h3{
+    font-size:clamp(16px,2vw,24px);
+    font-weight:700;letter-spacing:-0.01em;
+    margin-bottom:6px;
+  }
+  
+  .slide-content p{
+    font-size:clamp(12px,1.4vw,15px);
+    color:rgba(255,255,255,0.75);
+    letter-spacing:0.01em;
+  }
+
+  /* pagination */
+  .pagination{
+    display:flex;gap:10px;justify-content:center;
+    margin-top:clamp(30px,5vh,50px);
+  }
+  
+  .pag-dot{
+    width:8px;height:8px;border-radius:50%;
+    background:rgba(255,255,255,0.15);
+    cursor:pointer;
+    transition:all 600ms var(--ease);
+  }
+  
+  .pag-dot:hover{background:rgba(255,255,255,0.3)}
+  .pag-dot.active{
+    background:var(--accent);
+    box-shadow:0 8px 20px rgba(122,252,255,0.3);
+    transform:scale(1.3);
+  }
+
+  /* cross/counter (centered at bottom) */
+  .project-counter{
+    position:absolute;
+    bottom:clamp(30px,5vh,60px);
+    left:50%;transform:translateX(-50%);
+    font-size:clamp(13px,1.4vw,16px);
+    letter-spacing:0.05em;
+    color:rgba(255,255,255,0.5);
+    display:flex;align-items:center;gap:12px;
+    pointer-events:none;
+  }
+  
+  .counter-cross{
+    width:18px;height:18px;position:relative;
+    transition:transform 1000ms var(--ease);
+  }
+  
+  .counter-cross::before,
+  .counter-cross::after{
+    content:'';position:absolute;background:rgba(255,255,255,0.3);
+  }
+  .counter-cross::before{
+    left:50%;top:0;width:1px;height:100%;transform:translateX(-50%);
+  }
+  .counter-cross::after{
+    top:50%;left:0;height:1px;width:100%;transform:translateY(-50%);
+  }
+
+  /* =========================
+     DETAIL OVERLAY
+     ========================= */
+  #detail{
+    position:fixed;inset:0;z-index:200;
+    background:var(--bg);
+    opacity:0;pointer-events:none;
+    transition:opacity 1000ms var(--ease);
+    overflow:hidden;
+  }
+  #detail.show{opacity:1;pointer-events:auto}
+
+  .detail-scroll{
+    height:100%;overflow-y:auto;overflow-x:hidden;
+    -webkit-overflow-scrolling:touch;
+    padding:clamp(80px,12vh,120px) clamp(20px,5vw,60px) clamp(60px,8vh,100px);
+  }
+
+  .detail-hero{
+    width:100%;
+    height:clamp(300px,50vh,600px);
+    border-radius:clamp(8px,1vw,12px);
+    background-size:cover;background-position:center;
+    margin-bottom:clamp(40px,6vh,60px);
+    box-shadow:0 30px 100px rgba(0,0,0,0.7);
+    opacity:0;
+    transform:translateY(30px);
+    transition:opacity 1200ms var(--ease) 200ms,transform 1200ms var(--ease) 200ms;
+  }
+  #detail.show .detail-hero{opacity:1;transform:translateY(0)}
+
+  .detail-text{
+    max-width:800px;margin:0 auto;
+    color:rgba(255,255,255,0.9);
+    opacity:0;
+    transform:translateY(20px);
+    transition:opacity 1200ms var(--ease) 400ms,transform 1200ms var(--ease) 400ms;
+  }
+  #detail.show .detail-text{opacity:1;transform:translateY(0)}
+  
+  .detail-text h2{
+    font-size:clamp(28px,4vw,48px);
+    font-weight:800;letter-spacing:-0.02em;
+    margin-bottom:clamp(16px,2vw,24px);
+  }
+  
+  .detail-text p{
+    font-size:clamp(15px,1.6vw,18px);
+    line-height:1.7;letter-spacing:0.01em;
+    margin-bottom:1.2em;
+    color:rgba(255,255,255,0.85);
+  }
+  
+  .detail-text ul{
+    list-style:none;padding:0;
+    margin:clamp(20px,3vh,30px) 0;
+  }
+  
+  .detail-text li{
+    padding-left:1.5em;position:relative;
+    margin-bottom:0.8em;
+    font-size:clamp(14px,1.5vw,17px);
+    color:rgba(255,255,255,0.8);
+  }
+  
+  .detail-text li::before{
+    content:'—';position:absolute;left:0;
+    color:var(--accent);
+  }
+
+  .detail-text img{
+    width:100%;border-radius:clamp(6px,1vw,10px);
+    margin:clamp(20px,3vh,30px) 0;
+    box-shadow:0 20px 60px rgba(0,0,0,0.6);
+  }
+
+  /* close button */
+  .close-btn{
+    position:fixed;
+    top:clamp(20px,3vw,40px);
+    right:clamp(30px,5vw,60px);
+    z-index:210;
+    font-size:clamp(13px,1.2vw,15px);
+    letter-spacing:0.02em;
+    padding:clamp(8px,1vw,12px) clamp(16px,2vw,24px);
+    border:1px solid rgba(255,255,255,0.1);
+    border-radius:6px;
+    transition:all 400ms var(--ease);
+    background:rgba(255,255,255,0.02);
+    opacity:0;
+    transform:translateY(-10px);
+  }
+  #detail.show .close-btn{opacity:1;transform:translateY(0);transition-delay:600ms}
+  
+  .close-btn:hover{
+    background:rgba(255,255,255,0.06);
+    border-color:rgba(255,255,255,0.2);
+  }
+
+  /* =========================
+     ABOUT PAGE
+     ========================= */
+  #about{
+    position:absolute;inset:0;z-index:15;
+    opacity:0;pointer-events:none;
+    transition:opacity 1200ms var(--ease);
+    overflow:hidden;
+  }
+  #about.show{opacity:1;pointer-events:auto}
+
+  .about-scroll{
+    height:100%;overflow-y:auto;overflow-x:hidden;
+    -webkit-overflow-scrolling:touch;
+    padding:clamp(100px,15vh,180px) clamp(30px,6vw,80px) clamp(80px,10vh,120px);
+  }
+
+  .about-content{
+    max-width:900px;margin:0 auto;
+    opacity:0;transform:translateY(30px);
+    transition:opacity 1200ms var(--ease) 300ms,transform 1200ms var(--ease) 300ms;
+  }
+  #about.show .about-content{opacity:1;transform:translateY(0)}
+
+  .about-content h1{
+    font-size:clamp(36px,6vw,72px);
+    font-weight:800;letter-spacing:-0.03em;
+    margin-bottom:clamp(20px,3vh,40px);
+    line-height:1;
+  }
+
+  .about-content p{
+    font-size:clamp(16px,1.8vw,20px);
+    line-height:1.7;letter-spacing:0.01em;
+    color:rgba(255,255,255,0.85);
+    margin-bottom:1.5em;
+  }
+
+  .about-content .highlight{
+    color:var(--accent);
+    font-weight:600;
+  }
+
+  /* =========================
+     RESPONSIVE
+     ========================= */
+  @media (max-width:768px){
+    .carousel-track{gap:20px;padding:0 50vw}
+    .slide{flex:0 0 80vw}
+    #scrollProgress{display:none}
+  }
 </style>
 </head>
 <body>
-<main>
-<section>
-  <h1>Chris — Independent Inventor</h1>
-  <p>
-    I design autonomous systems, embedded intelligence, and local-first AI
-    that runs entirely on owned hardware.
-  </p>
-  <small>
-    Use ← → to navigate · Enter to open · Esc to close
-  </small>
-</section>
 
-<section id="ghost">
-  <h2>Ghost</h2>
-  <p>
-    Ghost is a distributed autonomous system designed for privacy and local control. 
-    Intelligence is placed where it is most effective—at the edge—rather than being 
-    centralized by default.
-  </p>
-  <p>
-    The system runs entirely on owned hardware, utilizing custom memory formats 
-    redesigned from scratch to optimize for local-first constraints.
-  </p>
-  <figure>
-    <img src="/assets/system-map.svg" alt="Ghost system architecture">
-    <figcaption>
-      High-level architecture of Ghost and its cooperating subsystems.
-    </figcaption>
-  </figure>
-</section>
+<canvas id="stars"></canvas>
 
-<section id="biopotential">
-  <h2>Biopotential Sensing</h2>
-  <p>
-    An experimental interface designed to read raw biological signals without 
-    institutional medical equipment. 
-  </p>
-  <p>
-    The initial analog prototypes revealed the extreme difficulty of signal 
-    isolation in non-lab environments. High susceptibility to electromagnetic 
-    noise rendered early data unusable, necessitating a complete pivot toward 
-    isolated digital signal processing (DSP) pipelines.
-  </p>
-</section>
+<!-- scroll progress bar -->
+<div id="scrollProgress">
+  <div class="bar"></div>
+</div>
 
-<section id="embedded">
-  <h2>Embedded Prototypes</h2>
-  <p>
-    A series of hardware studies testing the physical limits of autonomy.
-    These prototypes focus on the energy trade-offs required for intelligence 
-    to exist without a grid connection.
-  </p>
-  <p>
-    Multiple iterations failed specifically due to power constraints, establishing 
-    the "hard limits" for the current Ghost hardware specifications.
-  </p>
-</section>
+<!-- loader -->
+<div id="loader">
+  <div class="load-num"><span>0%</span></div>
+</div>
 
-<section id="about">
-  <h2>About</h2>
-  <p>
-    I’m an independent inventor focused on the intersection of hardware,
-    autonomy, and privacy-respecting intelligence.
-  </p>
-  <p>
-    I’m currently <strong>15 years old</strong>. All projects here were built
-    independently, outside institutional labs, with limited resources and
-    full ownership of the stack.
-  </p>
-  <p>
-    My work is defined by its failures. Understanding why analog sensors drift 
-    or why embedded batteries die is more valuable to me than a polished demo.
-  </p>
-</section>
+<!-- nav -->
+<nav>
+  <div class="left"><a href="/">Chris</a></div>
+  <div class="right">
+    <a href="#work" id="workLink">Work</a>
+    <a href="#about" id="aboutLink">About</a>
+  </div>
+</nav>
 
-<section id="contact">
-  <h2>Get in touch</h2>
-  <p>
-    I collaborate with researchers, engineers, and small teams working on
-    embedded systems, robotics, and local-first AI.
-  </p>
-  <p>
-    If you’re building something early-stage, experimental, or privacy-first,
-    I’m interested.
-  </p>
-  <p>
-    Email:
-    <a href="mailto:chris@solnetmesh.top">chris@solnetmesh.top</a>
-  </p>
-</section>
+<!-- app container -->
+<div id="app">
+  
+  <!-- intro -->
+  <div id="intro">
+    <div class="intro-content">
+      <h1>Chris — 15 y.o. inventor</h1>
+      <p>I build autonomous systems, hardware hacks and LLM experiments.</p>
+      <small>Click anywhere to explore</small>
+    </div>
+  </div>
 
-<footer>
-  Portfolio v0.3 · 2025 · Living system
-</footer>
-</main>
+  <!-- main carousel -->
+  <div id="main">
+    <div class="carousel-container">
+      <div class="carousel-track" id="track"></div>
+    </div>
+    
+    <div class="pagination" id="pagination"></div>
+    
+    <div class="project-counter">
+      <div class="counter-cross"></div>
+      <span id="counter">01 — 08</span>
+    </div>
+  </div>
+
+  <!-- about page -->
+  <div id="about">
+    <div class="about-scroll no-scroll" id="aboutScroll">
+      <div class="about-content">
+        <h1>About Chris</h1>
+        <p>I'm a <span class="highlight">15-year-old inventor</span> passionate about building things at the intersection of hardware and AI. My work focuses on creating autonomous systems that respect privacy and push the boundaries of what's possible with edge computing.</p>
+        
+        <p>From running local LLMs on Raspberry Pi clusters to designing credit-card-sized gaming devices, I explore how technology can be both powerful and personal. I believe the future of computing is distributed, private, and surprisingly small.</p>
+        
+        <p>When I'm not soldering circuits or training models, you'll find me documenting my experiments, contributing to open-source projects, or thinking about how to make technology more accessible and less invasive.</p>
+        
+        <p>I'm currently exploring reflective AI architectures, secure OTA update systems for IoT fleets, and novel form factors for everyday computing devices.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- detail overlay -->
+  <div id="detail">
+    <button class="close-btn" id="closeBtn">Close</button>
+    <div class="detail-scroll no-scroll" id="detailScroll">
+      <div class="detail-hero" id="detailHero"></div>
+      <div class="detail-text" id="detailText"></div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+// =========================
+// DATA
+// =========================
+const PROJECTS = [
+  {
+    id: "ghost",
+    title: "Ghost — Local Supervision Stack (Audit-First)",
+    desc: "A local system I built to assist my work: observability + policy gates + a fenced task runner + DNS anomaly auditing. Every decision leaves a trace.",
+    cover: "/assets/ghost/cover.jpg",
+    long: `
+<h2>Ghost — Local Supervision Stack (Audit-First)</h2>
+
+<h3>TL;DR</h3>
+<ul>
+  <li><strong>Ghost</strong> is a local supervision stack: <strong>observe → decide → execute → report</strong>, split into modules so nothing becomes an un-auditable “brain.”</li>
+  <li>Core writes to <strong>SQLite (WAL)</strong> for atomicity; JSONL/Markdown are <strong>exports</strong> for grepping and sharing.</li>
+  <li>Agent is a <strong>task runner</strong> with guardrails and full traces. In soft mode it prevents accidents; hardened mode uses OS isolation.</li>
+</ul>
+
+<h3>Why I built it</h3>
+<p>
+I wanted a “Jarvis”-style assistant that works locally and helps me ship real work. The constraint is non-negotiable: anything that influences behavior or automation must be explainable, reversible, and traceable.
+Ghost exists to make my own projects safer to iterate on — not to be a product pitch.
+</p>
+
+<h3>Architecture (separation of power)</h3>
+<ul>
+  <li><strong>Ghost Core (Supervisor)</strong>: normalizes signals and evaluates explicit policy; stores events/decisions in SQLite; exports human summaries.</li>
+  <li><strong>Ghost Agent (Worker)</strong>: runs task loops in a workspace; produces full traces; optional hardened isolation.</li>
+  <li><strong>AI Firewall (Auditor)</strong>: scores DNS logs and produces evidence + a review shortlist (recommend-only by design).</li>
+  <li><strong>PocketGhostOS</strong>: ESP32 pocket node for portable observation + UI + constrained “containment” modes.</li>
+  <li><strong>R2-D2 Node (WIP)</strong>: physical Ghost embodiment: ESP32-CAM + servos now; Pi4/accelerator later.</li>
+</ul>
+
+<h3>Receipts (what you can verify fast)</h3>
+<ul>
+  <li><strong>Repos</strong>:
+    <ul>
+      <li><a href="https://github.com/TRXAlpha/ghost-core" style="color:var(--accent)">github.com/TRXAlpha/ghost-core</a></li>
+      <li><a href="https://github.com/TRXAlpha/ghost-agent" style="color:var(--accent)">github.com/TRXAlpha/ghost-agent</a></li>
+      <li><a href="https://github.com/TRXAlpha/ai-firewall" style="color:var(--accent)">github.com/TRXAlpha/ai-firewall</a></li>
+      <li><a href="https://github.com/TRXAlpha/pocketghostos" style="color:var(--accent)">github.com/TRXAlpha/pocketghostos</a></li>
+      <li><a href="https://github.com/TRXAlpha/r2d2-ghost-node" style="color:var(--accent)">github.com/TRXAlpha/r2d2-ghost-node</a></li>
+    </ul>
+  </li>
+  <li><strong>Artifacts</strong>:
+    <ul>
+      <li><code>core/ghost.db</code> (SQLite WAL) + <code>exports/nightly/YYYY-MM-DD.md</code></li>
+      <li><code>agent/workspaces/&lt;task_id&gt;/</code> with <code>plan.md</code>, <code>actions.log</code>, <code>verify.log</code></li>
+      <li><code>firewall/reports/&lt;date&gt;.md</code> + <code>.json</code> with feature evidence</li>
+      <li><code>benchmarks/</code> (measured RAM/log volume/latency per module)</li>
+      <li><code>threat-model.md</code> (explicit non-goals + attacker assumptions)</li>
+    </ul>
+  </li>
+</ul>
+
+<figure>
+  <img src="/assets/ghost/receipts-grid.jpg" alt="Receipts grid">
+  <figcaption>Receipts: a SQLite-backed decision log export, an Agent workspace trace, and a DNS anomaly report excerpt.</figcaption>
+</figure>
+
+<h3>Hard limits (security model)</h3>
+<ul>
+  <li><strong>Core</strong>: does not execute code or mutate the OS.</li>
+  <li><strong>Firewall</strong>: does not auto-block (avoids self-DOS; produces candidates/evidence only).</li>
+  <li><strong>Agent</strong>: soft mode protects against accidents; hardened mode protects against adversarial escape attempts.</li>
+</ul>
+
+<h3>Status</h3>
+<p><strong>Active, evolving system.</strong> The bar is “auditable and usable,” not “sounds impressive.”</p>
+`
+  },
+
+  {
+    id: "ghost-core",
+    title: "Ghost Core — Signals → Events → Decisions (SQLite WAL)",
+    desc: "Normalizes OS/DNS signals into a strict schema, evaluates explicit policy, stores in SQLite (WAL), exports nightly summaries.",
+    cover: "/assets/ghost-core/cover.jpg",
+    long: `
+<h2>Ghost Core — Signals → Events → Decisions (SQLite WAL)</h2>
+
+<h3>TL;DR</h3>
+<ul>
+  <li>Core turns noisy signals into strict events and stores them in <strong>SQLite WAL</strong> for atomic writes and crash safety.</li>
+  <li>Policy outputs are explicit: <code>ALLOW</code> / <code>CHALLENGE</code> / <code>DENY</code>, with reason codes.</li>
+  <li>JSONL/Markdown exist as <strong>exports</strong>, not as the source of truth.</li>
+</ul>
+
+<h3>What Core does</h3>
+<ul>
+  <li><strong>Normalize</strong>: OS focus/idle and DNS summaries become stable, typed events.</li>
+  <li><strong>Decide</strong>: policy evaluation produces decisions with evidence and reason codes.</li>
+  <li><strong>Summarize</strong>: nightly exports compress the day into human-readable artifacts.</li>
+</ul>
+
+<h3>Primary storage</h3>
+<ul>
+  <li><code>ghost.db</code> (SQLite) with WAL enabled for crash resilience and concurrent reads.</li>
+  <li>Exports: <code>exports/events.jsonl</code> and <code>exports/nightly/YYYY-MM-DD.md</code> (derived outputs).</li>
+</ul>
+
+<h3>Sample event (real schema shape)</h3>
+<pre style="white-space:pre-wrap;opacity:.95">
+{
+  "ts": "2025-12-31T23:42:01+02:00",
+  "src": "os_focus",
+  "type": "focus_change",
+  "payload": { "app_id": "code.exe", "duration_ms": 4500 }
+}
+</pre>
+
+<figure>
+  <img src="/assets/ghost-core/nightly-sample.jpg" alt="Nightly summary sample">
+  <figcaption>Nightly export: top app buckets, gate triggers, and anomaly shortlist (redacted).</figcaption>
+</figure>
+
+<h3>Receipts</h3>
+<ul>
+  <li><strong>Repo</strong>: <a href="https://github.com/TRXAlpha/ghost-core" style="color:var(--accent)">github.com/TRXAlpha/ghost-core</a></li>
+  <li><strong>Bench</strong>: <code>benchmarks/core.md</code> (log growth, write rate, query latency).</li>
+</ul>
+
+<h3>Status</h3>
+<p><strong>Backbone module.</strong> Storage and schema are stable; policy evolves with usage.</p>
+`
+  },
+
+  {
+    id: "ghost-agent",
+    title: "Ghost Agent — Task Runner with Traces (Soft + Hardened Modes)",
+    desc: "Deterministic loop: PLAN → IMPLEMENT → VERIFY → REPAIR. Soft mode prevents accidents; hardened mode uses OS isolation. Always logged.",
+    cover: "/assets/ghost-agent/cover.jpg",
+    long: `
+<h2>Ghost Agent — Task Runner with Traces (Soft + Hardened Modes)</h2>
+
+<h3>TL;DR</h3>
+<ul>
+  <li>Agent runs a fixed loop: <strong>INGEST → PLAN → IMPLEMENT → VERIFY → REPAIR → DONE</strong>.</li>
+  <li>LLM output is treated as untrusted: it emits strict JSON actions; the orchestrator executes tools.</li>
+  <li>Two safety levels:
+    <ul>
+      <li><strong>Soft mode</strong>: path/tool/command gates to prevent accidents.</li>
+      <li><strong>Hardened mode</strong>: OS-level isolation (container/bubblewrap) to resist escape attempts.</li>
+    </ul>
+  </li>
+</ul>
+
+<h3>Why I built it</h3>
+<p>
+This exists to assist my own development work without giving an LLM raw shell access to my machine. It’s an automation runner with receipts, not “AI safety marketing.”
+</p>
+
+<h3>The loop (non-negotiable)</h3>
+<ul>
+  <li><strong>PLAN</strong>: must write <code>plan.md</code>.</li>
+  <li><strong>IMPLEMENT</strong>: file edits via tools in the workspace.</li>
+  <li><strong>VERIFY</strong>: orchestrator runs <code>constraints.test_cmd</code>.</li>
+  <li><strong>REPAIR</strong>: failing output becomes correction input.</li>
+</ul>
+
+<h3>Soft mode fences (accident prevention)</h3>
+<ul>
+  <li>Schema validation (reject invalid action shapes).</li>
+  <li>Workspace path guard (prevents accidental traversal).</li>
+  <li>Command allowlist + token blocklist (prevents obvious foot-guns).</li>
+</ul>
+
+<h3>Hardened mode fences (adversarial resistance)</h3>
+<ul>
+  <li>Runs inside an isolated environment with:
+    <ul>
+      <li>no host filesystem access except a mounted workspace</li>
+      <li>network disabled by default (or whitelisted)</li>
+      <li>resource limits and timeouts</li>
+    </ul>
+  </li>
+</ul>
+
+<h3>Proving the negative</h3>
+<p>
+I keep “escape attempt” tasks (symlink attempt, traversal attempt, blocked-network attempt). They fail, and the failure is logged. If I claim a fence, I show the crash report.
+</p>
+
+<figure>
+  <img src="/assets/ghost-agent/workspace-trace.jpg" alt="Agent workspace trace">
+  <figcaption>Trace: failing tests → REPAIR phase → passing tests, with tool calls + outputs.</figcaption>
+</figure>
+
+<h3>Receipts</h3>
+<ul>
+  <li><strong>Repo</strong>: <a href="https://github.com/TRXAlpha/ghost-agent" style="color:var(--accent)">github.com/TRXAlpha/ghost-agent</a></li>
+  <li><strong>Artifacts</strong>: <code>workspaces/&lt;task_id&gt;/{plan.md,actions.log,verify.log,state.json}</code></li>
+  <li><strong>Bench</strong>: <code>benchmarks/agent.md</code> (task success rates by category).</li>
+</ul>
+
+<h3>Status</h3>
+<p><strong>Active.</strong> Soft mode is stable; hardened mode is the direction for anything security-sensitive.</p>
+`
+  },
+
+  {
+    id: "aifirewall",
+    title: "AI Firewall — DNS Anomaly Auditor (Evidence-First)",
+    desc: "Heuristic DNS auditing built to reduce risk on a self-managed network: evidence + suppression + candidate blocks (manual apply).",
+    cover: "/assets/ai-firewall/cover.jpg",
+    long: `
+<h2>AI Firewall — DNS Anomaly Auditor (Evidence-First)</h2>
+
+<h3>TL;DR</h3>
+<ul>
+  <li>Reads DNS logs and produces a shortlist with feature evidence (entropy/novelty/burst/rare-TLD).</li>
+  <li>Does not auto-block by default (avoids self-DOS). It outputs <strong>candidates</strong> and the evidence behind them.</li>
+  <li>Has a noise-control loop: repeated “allow” suppresses benign buckets (CDNs/telemetry/captive portals).</li>
+</ul>
+
+<h3>Why I built it</h3>
+<p>
+I built this to prove I can run my own network safely even without being behind a “fancy router.” The point is not to cosplay enterprise security; it’s to make DNS behavior reviewable and reduce surprise risk.
+</p>
+
+<h3>Output that matters</h3>
+<ul>
+  <li><strong>Review list</strong>: small enough to be read.</li>
+  <li><strong>Suppression</strong>: common benign patterns get suppressed after confirmation.</li>
+  <li><strong>Candidate blocks</strong>: domains promoted only after repeated evidence + confirmation.</li>
+</ul>
+
+<figure>
+  <img src="/assets/ai-firewall/report-example.jpg" alt="AI Firewall report example">
+  <figcaption>Report entry: a flagged domain with feature evidence and reason codes.</figcaption>
+</figure>
+
+<h3>Receipts</h3>
+<ul>
+  <li><strong>Repo</strong>: <a href="https://github.com/TRXAlpha/ai-firewall" style="color:var(--accent)">github.com/TRXAlpha/ai-firewall</a></li>
+  <li><strong>Bench</strong>: <code>benchmarks/firewall.md</code> (flag rate, shortlist size, suppression wins).</li>
+</ul>
+
+<h3>Status</h3>
+<p><strong>Usable and restrained.</strong> “Actionability” and noise suppression are first-class goals.</p>
+`
+  },
+
+  {
+    id: "pocketghostos",
+    title: "PocketGhostOS — ESP32 Firmware Runtime (Event Loop + Modes)",
+    desc: "A portable Ghost node: event-driven firmware with explicit modes, UI, logs, and bounded networking — built after existing tooling didn’t fit my OLED + workflow.",
+    cover: "/assets/pocketghostos/cover.jpg",
+    long: `
+<h2>PocketGhostOS — ESP32 Firmware Runtime (Event Loop + Modes)</h2>
+
+<h3>TL;DR</h3>
+<ul>
+  <li>This is <strong>firmware</strong> with an explicit mode machine and a cooperative event loop — not a “kernel.”</li>
+  <li>Built to be an always-on backpack node for observation, UI, and bounded “containment” behaviors.</li>
+  <li>Handles Wi-Fi latency explicitly: the UI is never “mysteriously frozen”; it shows a known degraded state.</li>
+</ul>
+
+<h3>Execution model</h3>
+<ol>
+  <li>Hardware recovery (I2C/OLED watchdog)</li>
+  <li>Input edges (debounce + long-press)</li>
+  <li>Mode scheduler (Observe / Contain / Setup)</li>
+  <li>Event polling (Wi-Fi state, HTTP requests, DNS behavior)</li>
+  <li>UI render (only when state changes)</li>
+</ol>
+
+<h3>Latency strategy (no pretending)</h3>
+<ul>
+  <li>Wi-Fi scan/handshake can spike latency.</li>
+  <li>During spikes, the UI enters a defined degraded state (spinner/status + input queued) instead of “random lag.”</li>
+</ul>
+
+<figure>
+  <img src="/assets/pocketghostos/state-machine.jpg" alt="PocketGhostOS state machine">
+  <figcaption>Mode machine: Observe ⇄ Contain ⇄ Setup with allowed subsystems.</figcaption>
+</figure>
+
+<h3>Receipts</h3>
+<ul>
+  <li><strong>Repo</strong>: <a href="https://github.com/TRXAlpha/pocketghostos" style="color:var(--accent)">github.com/TRXAlpha/pocketghostos</a></li>
+  <li><strong>Bench</strong>: <code>benchmarks/pocketghostos.md</code> (loop timing, worst-case spikes, heap stats).</li>
+</ul>
+
+<h3>Status</h3>
+<p><strong>Active.</strong> The bar is “debuggable and bounded,” not “maximal features.”</p>
+`
+  },
+
+  {
+    id: "r2d2",
+    title: "R2-D2 — Physical Ghost Node (WIP)",
+    desc: "A 3D-printed R2-D2 shell: ESP32-CAM + expressive servos now; Pi 4 + optional accelerator later. Built to give Ghost a body.",
+    cover: "/assets/r2d2/cover.jpg",
+    long: `
+<h2>R2-D2 — Physical Ghost Node (WIP)</h2>
+
+<h3>TL;DR</h3>
+<ul>
+  <li>This project exists to give Ghost a <strong>physical counterpart</strong>, not just a UI.</li>
+  <li>Current: <strong>ESP32-CAM</strong> for vision experiments + <strong>2 servos</strong> for expressive head motion.</li>
+  <li>Planned: <strong>Pi 4</strong> inside the chassis for local vision + interpretation, with realistic latency (seconds per frame). “Near real-time VLM” is not promised on Pi 4 CPU.</li>
+</ul>
+
+<h3>Reality check (performance + power)</h3>
+<ul>
+  <li>On Pi 4, heavier vision-language models are slow on CPU. The plan is staged:
+    <ul>
+      <li>real-time-ish detection: lightweight CV models</li>
+      <li>language interpretation: slower “snapshot” analysis</li>
+      <li>optional accelerators later (if needed)</li>
+    </ul>
+  </li>
+  <li>Servos are not powered from the Pi’s rail. The design includes <strong>power isolation</strong> (separate buck/BEC + brownout safety).</li>
+</ul>
+
+<h3>Status</h3>
+<p><strong>WIP.</strong> Shipping in stages: head motion + camera first, compute integration second, autonomy later.</p>
+`
+  },
+
+  {
+    id: "biopotential",
+    title: "BioPotential — One-Day EMI-Limited Activity Envelope",
+    desc: "A one-day discrete-only experiment (no caps because I didn’t have any): virtual midpoint + high impedance input + DSP envelope. Honest framing: EMI/contact dominate.",
+    cover: "/assets/biopotential/cover.jpg",
+    long: `
+<h2>BioPotential — One-Day EMI-Limited Activity Envelope (Not EMG)</h2>
+
+<h3>TL;DR</h3>
+<ul>
+  <li>This was a <strong>one-day</strong> “can I get anything usable?” experiment inspired by wearables.</li>
+  <li>Constraints were real: <strong>no op-amps, no sensor IC, no capacitors (because I didn’t have any)</strong>.</li>
+  <li>Result: an <strong>activity envelope proxy</strong> that is heavily EMI/contact-limited. Useful as a learning artifact, not a medical device.</li>
+</ul>
+
+<h3>What it is (honest physics)</h3>
+<ul>
+  <li>High-impedance sensing + virtual midpoint into an Arduino ADC.</li>
+  <li>Dominant signals: contact impedance changes, motion artifacts, and 50Hz pickup.</li>
+  <li>So the output is framed as an “activity envelope,” not “muscle signal.”</li>
+</ul>
+
+<h3>What made it usable</h3>
+<ul>
+  <li>RMS windowing → envelope follower → adaptive baseline → hysteresis thresholds.</li>
+  <li>LED output: low / medium / high envelope levels.</li>
+</ul>
+
+<h3>Status</h3>
+<p><strong>Done as a side project.</strong> A serious revision would add a proper differential front-end and real analog filtering.</p>
+`
+  },
+
+  {
+    id: "robotics",
+    title: "Robotics — Integration & Telemetry",
+    desc: "FTC-driven systems engineering: state machines, sensor sanity checks, fallback logic, and telemetry that makes failures debuggable.",
+    cover: "/assets/robotics/cover.jpg",
+    long: `
+<h2>Robotics — Integration & Telemetry</h2>
+
+<h3>TL;DR</h3>
+<ul>
+  <li>Robotics is where timing, noise, and mechanical slop punish wishful thinking.</li>
+  <li>I focus on explicit state machines, sensor trust, and telemetry that makes failures visible.</li>
+  <li>This informs Ghost directly: logs, bounded automation, and failure-first design.</li>
+</ul>
+
+<h3>Receipts</h3>
+<ul>
+  <li>Match/field clips + telemetry overlays</li>
+  <li>State machine diagrams + failure case writeups</li>
+  <li>Bench notes in <code>benchmarks/robotics.md</code> (repeatability and drift tests)</li>
+</ul>
+
+<h3>Status</h3>
+<p><strong>Ongoing.</strong> This section stays current with the most representative systems and best proof artifacts.</p>
+`
+  },
+
+  {
+    id: "contact",
+    title: "Get in touch",
+    desc: "Email + repos. If you want a review, send an artifact and a concrete question.",
+    cover: "/assets/contact/cover.jpg",
+    long: `
+<h2>Get in touch</h2>
+
+<ul>
+  <li>Email: <a href="mailto:chris@solnetmesh.top" style="color:var(--accent)">chris@solnetmesh.top</a></li>
+  <li>GitHub: <a href="https://github.com/TRXAlpha" style="color:var(--accent)">github.com/TRXAlpha</a></li>
+</ul>
+
+<p>
+If you want a technical review, send: repo link, constraints, and one specific question. I respond fastest to concrete artifacts: a trace log, a schematic, a benchmark, or a failing test.
+</p>
+`
+  }
+];
+
+
+// =========================
+// STARFIELD
+// =========================
+(function() {
+  const canvas = document.getElementById('stars');
+  const ctx = canvas.getContext('2d');
+  let w, h, stars = [];
+
+  function resize() {
+    w = canvas.width = innerWidth;
+    h = canvas.height = innerHeight;
+    stars = [];
+    const count = Math.floor(Math.max(150, Math.min(400, (w * h) / 4000)));
+    for (let i = 0; i < count; i++) {
+      stars.push({
+        x: Math.random() * w,
+        y: Math.random() * h,
+        r: Math.random() * 1.2 + 0.3,
+        a: Math.random() * 0.6 + 0.2,
+        v: (Math.random() * 0.012) + 0.003,
+        targetA: Math.random() * 0.8 + 0.2
+      });
+    }
+  }
+
+  function draw() {
+    ctx.fillStyle = '#141414';
+    ctx.fillRect(0, 0, w, h);
+
+    for (const s of stars) {
+      // smooth twinkling
+      s.a += s.v;
+      if (s.a <= 0.1 || s.a >= s.targetA) {
+        s.v *= -1;
+        if (Math.random() > 0.98) {
+          s.targetA = Math.random() * 0.8 + 0.2;
+        }
+      }
+      
+      ctx.beginPath();
+      ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(255,255,255,${s.a})`;
+      ctx.fill();
+    }
+    requestAnimationFrame(draw);
+  }
+
+  addEventListener('resize', resize);
+  resize();
+  draw();
+})();
+
+// =========================
+// APP LOGIC
+// =========================
+const track = document.getElementById('track');
+const pagination = document.getElementById('pagination');
+const intro = document.getElementById('intro');
+const main = document.getElementById('main');
+const about = document.getElementById('about');
+const detail = document.getElementById('detail');
+const detailHero = document.getElementById('detailHero');
+const detailText = document.getElementById('detailText');
+const detailScroll = document.getElementById('detailScroll');
+const aboutScroll = document.getElementById('aboutScroll');
+const closeBtn = document.getElementById('closeBtn');
+const loader = document.getElementById('loader');
+const counter = document.getElementById('counter');
+const workLink = document.getElementById('workLink');
+const aboutLink = document.getElementById('aboutLink');
+const scrollProgress = document.getElementById('scrollProgress');
+const progressBar = scrollProgress.querySelector('.bar');
+
+let currentIndex = 0;
+let isAnimating = false;
+
+// Build slides
+function buildSlides() {
+  track.innerHTML = '';
+  pagination.innerHTML = '';
+
+  PROJECTS.forEach((project, i) => {
+    // slide
+    const slide = document.createElement('div');
+    slide.className = 'slide';
+    slide.dataset.index = i;
+
+    const bg = document.createElement('div');
+    bg.className = 'slide-bg';
+    if (project.cover) {
+      bg.style.backgroundImage = `url(${project.cover})`;
+    } else {
+      const hue = 190 + (i * 30) % 140;
+      bg.style.backgroundImage = `linear-gradient(135deg, hsl(${hue}, 50%, 12%), hsl(${hue}, 40%, 6%))`;
+    }
+
+    const content = document.createElement('div');
+    content.className = 'slide-content';
+    content.innerHTML = `<h3>${project.title}</h3><p>${project.desc}</p>`;
+
+    slide.appendChild(bg);
+    slide.appendChild(content);
+    slide.addEventListener('click', () => {
+      if (!isAnimating && slide.classList.contains('active')) {
+        openDetail(i);
+      }
+    });
+    track.appendChild(slide);
+
+    // pagination dot
+    const dot = document.createElement('div');
+    dot.className = 'pag-dot';
+    dot.dataset.index = i;
+    dot.addEventListener('click', () => goTo(i));
+    pagination.appendChild(dot);
+  });
+
+  updateCarousel(false);
+}
+
+// Update carousel position
+function updateCarousel(animate = true) {
+  if (isAnimating && animate) return;
+  
+  const slides = Array.from(track.children);
+  const dots = Array.from(pagination.children);
+  
+  slides.forEach((slide, i) => {
+    slide.classList.toggle('active', i === currentIndex);
+  });
+  
+  dots.forEach((dot, i) => {
+    dot.classList.toggle('active', i === currentIndex);
+  });
+
+  // center active slide
+  const activeSlide = slides[currentIndex];
+  if (activeSlide) {
+    const slideRect = activeSlide.getBoundingClientRect();
+    const trackRect = track.getBoundingClientRect();
+    const offset = slideRect.left - trackRect.left;
+    const center = innerWidth / 2 - slideRect.width / 2;
+    
+    track.style.transition = animate ? 'transform 1400ms var(--ease)' : 'none';
+    track.style.transform = `translateX(${center - offset}px)`;
+    
+    if (animate) {
+      isAnimating = true;
+      setTimeout(() => { isAnimating = false; }, 1400);
+    }
+  }
+
+  // update counter
+  const num = String(currentIndex + 1).padStart(2, '0');
+  const total = String(PROJECTS.length).padStart(2, '0');
+  counter.textContent = `${num} — ${total}`;
+}
+
+// Navigate
+function goTo(index) {
+  if (isAnimating) return;
+  currentIndex = (index + PROJECTS.length) % PROJECTS.length;
+  updateCarousel(true);
+}
+
+function next() {
+  goTo(currentIndex + 1);
+}
+
+function prev() {
+  goTo(currentIndex - 1);
+}
+
+// Detail view
+function openDetail(index) {
+  currentIndex = index;
+  const project = PROJECTS[index];
+  
+  // fade out carousel
+  main.classList.add('fade-out');
+  
+  setTimeout(() => {
+    if (project.cover) {
+      detailHero.style.backgroundImage = `url(${project.cover})`;
+    } else {
+      const hue = 190 + (index * 30) % 140;
+      detailHero.style.backgroundImage = `linear-gradient(135deg, hsl(${hue}, 50%, 12%), hsl(${hue}, 40%, 6%))`;
+    }
+    
+    detailText.innerHTML = project.long;
+    detail.classList.add('show');
+    scrollProgress.classList.add('show');
+    document.body.style.overflow = 'hidden';
+    detailScroll.scrollTop = 0;
+    progressBar.style.height = '0%';
+  }, 400);
+}
+
+function closeDetail() {
+  detail.classList.remove('show');
+  scrollProgress.classList.remove('show');
+  
+  setTimeout(() => {
+    main.classList.remove('fade-out');
+    document.body.style.overflow = '';
+  }, 400);
+}
+
+closeBtn.addEventListener('click', closeDetail);
+
+// Update scroll progress bar
+function updateScrollProgress() {
+  const scrollTop = detailScroll.scrollTop;
+  const scrollHeight = detailScroll.scrollHeight - detailScroll.clientHeight;
+  const progress = (scrollTop / scrollHeight) * 100;
+  progressBar.style.height = `${progress}%`;
+}
+
+detailScroll.addEventListener('scroll', updateScrollProgress);
+aboutScroll.addEventListener('scroll', () => {
+  const scrollTop = aboutScroll.scrollTop;
+  const scrollHeight = aboutScroll.scrollHeight - aboutScroll.clientHeight;
+  const progress = (scrollTop / scrollHeight) * 100;
+  progressBar.style.height = `${progress}%`;
+});
+
+// Navigation
+workLink.addEventListener('click', (e) => {
+  e.preventDefault();
+  about.classList.remove('show');
+  scrollProgress.classList.remove('show');
+  detail.classList.remove('show');
+  
+  setTimeout(() => {
+    main.classList.remove('fade-out');
+    main.classList.add('show');
+    workLink.classList.add('active');
+    aboutLink.classList.remove('active');
+  }, 400);
+});
+
+aboutLink.addEventListener('click', (e) => {
+  e.preventDefault();
+  main.classList.add('fade-out');
+  detail.classList.remove('show');
+  
+  setTimeout(() => {
+    about.classList.add('show');
+    scrollProgress.classList.add('show');
+    aboutScroll.scrollTop = 0;
+    progressBar.style.height = '0%';
+    aboutLink.classList.add('active');
+    workLink.classList.remove('active');
+  }, 400);
+});
+
+// Keyboard controls (faster response)
+let lastKeyTime = 0;
+const KEY_THROTTLE = 200;
+
+addEventListener('keydown', (e) => {
+  const now = Date.now();
+  
+  if (detail.classList.contains('show')) {
+    if (e.key === 'Escape') closeDetail();
+    if ((e.key === 'ArrowRight' || e.key === 'ArrowLeft') && now - lastKeyTime > KEY_THROTTLE) {
+      lastKeyTime = now;
+      if (e.key === 'ArrowRight') { next(); openDetail(currentIndex); }
+      if (e.key === 'ArrowLeft') { prev(); openDetail(currentIndex); }
+    }
+  } else if (!about.classList.contains('show') && now - lastKeyTime > KEY_THROTTLE) {
+    if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') {
+      lastKeyTime = now;
+      if (e.key === 'ArrowRight') next();
+      if (e.key === 'ArrowLeft') prev();
+    }
+  }
+});
+
+// Mouse wheel navigation in carousel
+let lastWheelTime = 0;
+const WHEEL_THROTTLE = 25;
+
+addEventListener('wheel', (e) => {
+  // Only work when carousel is visible
+  if (!main.classList.contains('show')) return;
+  if (about.classList.contains('show')) return;
+  if (detail.classList.contains('show')) return;
+  if (isAnimating) return;
+  
+  const now = Date.now();
+  if (now - lastWheelTime < WHEEL_THROTTLE) return;
+  
+  const deltaY = e.deltaY;
+  const deltaX = e.deltaX;
+  
+  // Check if scroll is significant enough
+  if (Math.abs(deltaY) > 10 || Math.abs(deltaX) > 10) {
+    lastWheelTime = now;
+    
+    if (Math.abs(deltaY) > Math.abs(deltaX)) {
+      // vertical scroll - scroll down = next, scroll up = prev
+      if (deltaY > 0) {
+        next();
+      } else {
+        prev();
+      }
+    } else {
+      // horizontal scroll - scroll right = next, scroll left = prev
+      if (deltaX > 0) {
+        next();
+      } else {
+        prev();
+      }
+    }
+  }
+}, { passive: true });
+
+// Show scene
+function showScene() {
+  intro.classList.add('hide');
+  setTimeout(() => {
+    intro.style.display = 'none';
+    main.classList.add('show');
+    workLink.classList.add('active');
+    buildSlides();
+    
+    // cinematic fast-forward intro
+    let steps = Math.min(14, PROJECTS.length * 2);
+    let count = 0;
+    const interval = setInterval(() => {
+      currentIndex = (currentIndex + 1) % PROJECTS.length;
+      updateCarousel(true);
+      count++;
+      if (count >= steps) {
+        clearInterval(interval);
+        setTimeout(() => {
+          currentIndex = 0;
+          updateCarousel(true);
+        }, 500);
+      }
+    }, 100);
+  }, 400);
+}
+
+// Intro click
+intro.addEventListener('click', showScene);
+
+// Prevent carousel jumping on small mouse movements
+let lastUpdateTime = 0;
+const UPDATE_THROTTLE = 100;
+
+addEventListener('mousemove', () => {
+  const now = Date.now();
+  if (now - lastUpdateTime > UPDATE_THROTTLE && main.classList.contains('show') && !isAnimating) {
+    lastUpdateTime = now;
+  }
+});
+
+// Init with loader animation
+(function init() {
+  const loadNum = document.querySelector('.load-num span');
+  let progress = 0;
+  
+  const loadInterval = setInterval(() => {
+    progress += Math.random() * 15 + 5;
+    if (progress >= 100) {
+      progress = 100;
+      clearInterval(loadInterval);
+      loadNum.textContent = '100%';
+      
+      setTimeout(() => {
+        loader.classList.add('hide');
+        setTimeout(() => {
+          loader.style.display = 'none';
+          
+          // animate intro in
+          const h1 = intro.querySelector('h1');
+          const p = intro.querySelector('p');
+          h1.style.opacity = '0';
+          h1.style.transform = 'translateY(30px)';
+          p.style.opacity = '0';
+          
+          requestAnimationFrame(() => {
+            setTimeout(() => {
+              h1.style.transition = 'all 1200ms var(--ease)';
+              h1.style.opacity = '1';
+              h1.style.transform = 'translateY(0)';
+              p.style.transition = 'opacity 1200ms var(--ease)';
+              p.style.opacity = '1';
+            }, 100);
+          });
+          
+          // auto-advance after 2.5s
+          setTimeout(showScene, 2500);
+        }, 800);
+      }, 300);
+    } else {
+      loadNum.textContent = Math.floor(progress) + '%';
+    }
+  }, 120);
+  
+  // animate loader number in
+  requestAnimationFrame(() => {
+    setTimeout(() => {
+      loadNum.style.transition = 'transform 800ms var(--ease)';
+      loadNum.style.transform = 'translate3d(0,0,0)';
+    }, 100);
+  });
+})();
+
+// Resize handler
+addEventListener('resize', () => {
+  if (main.classList.contains('show')) {
+    updateCarousel(false);
+  }
+});
+</script>
+
 </body>
 </html>
